@@ -1,87 +1,81 @@
-const express = require('express');
-const uuid = require('uuid');
-const port = 4000
+const express  = require('express')
+const uuid = require('uuid')
 
-const app = express();
+const port = 3000
+
+const app = express()
 app.use(express.json())
 
 const orders = []
 
-const middleware = (request, response, next) => {
+const midleware = (request, response, next) => {
     const { id } = request.params
-    const index = orders.findIndex(orderId => orderId.id === id)
+    const index = orders.findIndex( order => order.id === id )
 
-    if(index < 0) {
-        return response.status(404).json({message: "Order not found!"})
-    }
-    
-    request.index = index
+    if (index < 0) { return response.status(404).json({ message: 'Id not found' }) }
+
     request.id = id
-    
-    console.log('Request URL:', request.originalUrl)
-    console.log('Request Type:', request.method)
+    request.index = index
 
     next()
 }
 
-app.middlewareVerbs = (request, response, next) => {
-    console.log('Request Type:', request.method);
+const middlewareVerbs = (request, response, next) => {
+    console.log(`[${request.method}] - ${request.url}`)
     next()
 }
 
-app.get('/orders', (request, response) => {
+app.get("/order", middlewareVerbs, (request, response) => {
     return response.json(orders)
 })
 
-app.get('/orders/:id', middleware, (request, response) => {
-    const { order, clientName, price, status } = request.body
+app.get("/order/:id", midleware, middlewareVerbs, (request, response) => {
     const id = request.id
-    
-    const uniqueOrder = { id, order, clientName, price, status }
     const orderId = orders.filter( element => element.id === id)
 
     return response.json(orderId)
+
 })
 
-app.post('/orders', (request, response) => {
+app.post("/order", middlewareVerbs, (request, response) => {
     const { order, clientName, price, status } = request.body
-    const orderUser = { id: uuid.v4(), order, clientName,  price, status }
+    const clientOrder = { id:uuid.v4(), order, clientName, price, status }
 
-    orders.push(orderUser)
+    orders.push(clientOrder)
 
-    return response.status(201).json(orders)
+    return response.json(orders)
 })
 
-app.put('/orders/:id', middleware, (request, response) => {
-    const { order, clientName, price, status } = request.body
-    const index = request.index
+app.put("/order/:id", midleware, middlewareVerbs, (request, response) => {
     const id = request.id
+    const index = request.index
+    const { order, clientName, price, status } = request.body
 
     const updateOrder = { id, order, clientName, price, status }
 
     orders[index] = updateOrder
-    return response.json(orders)
+
+    return response.json(updateOrder)
 })
 
-app.delete('/orders/:id', middleware, (request, response) => {
-    const index = request.id
+app.delete("/order/:id", midleware, middlewareVerbs, (request, response) => {
+    const index = request.index
+
     orders.splice(index, 1)
-
-    return response.status(200).json({message: "User deleted!"})
+    return response.status(201).json({ message: "User deleted successifuly!"})
 })
 
-app.patch('/orders/:id', middleware, (request, response) => {
-    const { order, clientName, price, status } = request.body
+app.patch("/order/:id", midleware, middlewareVerbs, (request, response) => {
     const id = request.id
-
-    const newStatusOrder = { id, order, clientName, price, status }
-    const newStatus = orders.filter( element => element.id === id).map( element => {
+   
+    const newStatus = orders.filter( element => element.id === id)
+    newStatus.map( element => {
         const news = {
             id: element.id,
             order: element.order,
             clientName: element.clientName,
             price: element.price,
-            status: 'Pronto'
+            status: 'Pedido Pronto'
         }
         return response.json(news)
     })
@@ -90,5 +84,5 @@ app.patch('/orders/:id', middleware, (request, response) => {
 
 
 app.listen(port, () => {
-    console.log(`🚀 server started on port ${port}`)
+    console.log(`[nodemon] run in port ${port}`)
 })
